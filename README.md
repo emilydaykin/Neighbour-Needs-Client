@@ -109,9 +109,122 @@ Neighbour Needs is a full stack MERN application (MongoDB, Express, React and No
 
 
 ## Featured Code Snippets
-- schema screenshot?
-- authentication error handling (with try/catch block) in BE and FE?
+### Front End
+#### New post pop-up (only when authenticated) using css `position: absolute`. User can also delete their posts only`.
+```
+const [createPostPopup, setCreatePostPopup] = useState(false);
+const [newPostData, setNewPostData] = useState({
+  text: '',
+  service: '',
+  urgency: ''
+});
 
-## Wins & Challenges
+const createPostClicked = () => setCreatePostPopup(!createPostPopup);
 
-## Future Improvements
+function handlePostInputChange(e) {
+  setNewPostData({ ...newPostData, [e.target.name]: e.target.value });
+}
+async function handleSubmitPost(e) {
+  e.preventDefault();
+  await createPost(newPostData);
+  setNewPostData({ text: '', service: '', urgency: '' });
+  setCreatePostPopup(!createPostPopup);
+  getPostData();
+}
+
+async function handleDeletePost(postId) {
+  await deletePost(postId);
+  getPostData();
+}
+```
+
+### Back End
+#### Secure Route middleware to verify authentication and access rights
+```
+import jwt from 'jsonwebtoken';
+import Profile from '../models/profile.js';
+import { secret } from '../config/environment.js';
+
+const secureRoute = async (req, res, next) => {
+  try {
+    const authToken = req.headers.authorization;
+    if (!authToken || !authToken.startsWith('Bearer')) {
+      return res
+        .status(401)
+        .send({ message: 'Unauthorised. Auth Token incorrect or does not exist' });
+    } else {
+      const token = authToken.replace('Bearer ', '');
+      jwt.verify(token, secret, async (err, data) => {
+        if (err) {
+          return res.status(400).json({ message: "Unauthorised. JWT can't verify." });
+        } else {
+          const user = await Profile.findById(data.profileId);
+          if (!user) {
+            return res.status(401).json({ message: 'Unauthorised. User not in database' });
+          } else {
+            req.currentUser = user;
+            next();
+          }
+        }
+      });
+    }
+  } catch (err) {
+    return res.status(401).send({ message: 'Unauthorised' });
+  }
+};
+
+export default secureRoute;
+
+```
+#### Interlinked profile and comments model schema
+```
+export const commentSchema = new mongoose.Schema(
+  {
+    text: { type: String, required: true, maxLength: 300 },
+    rating: { type: Number, required: true, min: 1, max: 5 },
+    createdById: {
+      type: mongoose.Schema.ObjectId,
+      ref: 'Profile',
+      required: true
+    },
+    createdByName: {
+      type: String
+    },
+    createdBySurname: {
+      type: String
+    }
+  },
+  { timestamps: true }
+);
+
+const profileSchema = new mongoose.Schema({
+  firstName: { type: String, required: [true, 'First name required'] },
+  surname: { type: String, required: [true, 'Surname required'] },
+  email: {
+    type: String,
+    required: [true, 'Email required'],
+    unique: true,
+    validate: (email) => emailRegex.test(email)
+  },
+  password: {
+    type: String,
+    required: [true, 'Password required'],
+    minlength: [8, 'Password must be a minimum of 8 characters'],
+    validate: (password) => passwordRegex.test(password)
+  },
+  isHelper: { type: Boolean },
+  averageRating: { type: String },
+  services: { type: Array },
+  bio: { type: String },
+  city: { type: String, required: [true, 'City required'] },
+  region: { type: String, required: [true, 'Region required'] },
+  imageProfile: { type: String },
+  imageService: { type: String },
+  comments: [commentSchema],
+  posts: { type: Array },
+  isAdmin: { type: Boolean }
+});
+```
+
+## Future Improvements & Bugs
+If we'd had more time as a group, we would've loved to implement an edit profile function (where a user can edit their own profile, become a helper, add a bio etc), as well as messaging functionality where users can reach out to helpers to arrange appointments and request more information. One unsolved problem we had was registered a new user a helper: when a new user registers and fills out the services they can help out with, they don't get saved to the database as a helper.
