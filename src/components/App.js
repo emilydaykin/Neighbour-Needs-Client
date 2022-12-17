@@ -14,7 +14,7 @@ import ServiceProfiles from './ServiceProfiles';
 
 if (process.env.NODE_ENV === 'production') {
   // as opposed to 'local'
-  axios.defaults.baseURL = 'https://neighbour-needs.herokuapp.com';
+  axios.defaults.baseURL = 'https://neighbour-needs-api.onrender.com';
 }
 
 const App = () => {
