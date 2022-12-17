@@ -76,7 +76,7 @@ Neighbour Needs is a full stack MERN application (MongoDB, Express, React and No
 - Npm
 - Deployment:
   - Front End: Netlify
-  - Back End: Heroku (& Mongo Atlas)
+  - Back End: ~~Heroku~~ Render (& Mongo Atlas)
 
 ## Features
 - Display of all profiles, and routing to an individual profile page with more information and a comments area when clicked on
